@@ -1,4 +1,5 @@
 const arg = require('arg');
+const fs = require('fs');
 
 main();
 
@@ -10,8 +11,10 @@ async function main() {
     '--real-th': String,
     '--beacon': [String],
     '--help': Boolean,
+    '--conf': String,
 
     // Aliases
+    '-c': '--conf',
     '-d': '--dir',
     '-m': '--mean-th',
     '-r': '--real-th',
@@ -29,6 +32,41 @@ async function main() {
     try {
       if (args['--help'])
         throw '0';
+
+      if (args['--conf']) {
+        const toml = require('toml');
+        try {
+          const conf = fs.readFileSync(args['--conf']).toString();
+          const obj = toml.parse(conf);
+          console.log(obj);
+          if (
+            !obj.dir || typeof obj.dir !== 'string'
+            || !obj['mean-th'] || !Array.isArray(obj['mean-th']) || obj['mean-th'].length !== 3
+            || !obj.beacon || !Array.isArray(obj.beacon) || !obj.beacon.length
+            || (obj['real-th'] && (!Array.isArray(obj['real-th']) || obj['real-th'].length !== 3))
+          ) {
+            throw '0';
+          }
+          
+          const beacons = obj.beacon.map(b => ({
+            mac: b.mac,
+            realX: b.x,
+            realY: b.y,
+            realZ: b.z,
+          }));
+          return {
+            dir: obj.dir,
+            meanTh: obj['mean-th'],
+            realTh: obj['real-th'],
+            beacons,
+          };
+        } catch (e) {
+          console.log('读取配置文件失败')
+          process.exit(1);
+        }
+      }
+
+
       if (!args['--dir'] || !args['--mean-th'] || !args['--beacon'])
         throw '1';
 
@@ -63,20 +101,24 @@ async function main() {
       console.log(`使用方法: node analyze.js ...options
 
 Options:
+    <-c, --conf>         指定配置文件
     <-d, --dir>          日志目录
     <-m, --mean-th>      样本值与均值坐标误差范围 mean_th_1,mean_th_2,mean_th_3
     [-r, --real-th]      样本值与实际坐标误差范围 real_th_1,real_th_2,real_th_3
     <-b, --beacon>...    信标实际位置 mac,real_x,real_y,real_z
     
 例： 
+    node analyze.js -c abc.conf
     node analyze.js -d logs/201019153143 -m 1,1.5,2 -b 3cfad3b0f0fb,1.48,-1.05,1.20 -b 3cfad3b0f6f9,1.20,3.62,1.20
 `);
       process.exit(0);
     }
   })();
 
+  console.log(meanTh);
+  console.log(beacons);
+
   const events = require('events');
-  const fs = require('fs');
   const readline = require('readline');
   const { sync } = require('glob');
 

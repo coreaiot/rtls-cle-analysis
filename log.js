@@ -28,10 +28,10 @@ async function main() {
 
   const itv = 200;
   const durationInItv = durationInSecs * 1000 / itv;
-  const oneHourInItv = 60 * 60 * 1000 / itv;
+  // const oneHourInItv = 60 * 60 * 1000 / itv;
 
   for (let i = 0; i < durationInItv; ++i) {
-    const h = Math.floor(i / oneHourInItv);
+    // const h = Math.floor(i / oneHourInItv);
     await Promise.all([
       new Promise(r => setTimeout(r, itv)),
       (async () => {
@@ -40,7 +40,7 @@ async function main() {
           const ts = '[' + moment().format('MM-DD HH:mm:ss SSS') + ']';
           for (const mac of Object.keys(res.data)) {
             if (typeof res.data[mac].x === 'number' && typeof res.data[mac].y === 'number' && typeof res.data[mac].z === 'number' && typeof res.data[mac].rssi === 'number' && res.data[mac].userData && res.data[mac].userData[8] && res.data[mac].userData[8].gSensors) {
-              const f = join(dir, `${mac}_${h.toString().padStart(3, '0')}.log`);
+              const f = join(dir, `${mac}.log`);
               const msg = [ts, mac, res.data[mac].x.toFixed(2), res.data[mac].y.toFixed(2), res.data[mac].z.toFixed(2), res.data[mac].rssi.toFixed(2), ...res.data[mac].userData[8].gSensors].join(' ');
               console.log(msg);
               await fs.appendFile(f, msg + '\n');
